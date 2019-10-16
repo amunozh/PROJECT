@@ -1,0 +1,130 @@
+{
+	"Status": {
+		"Hu Yang": {
+			"Amoxicillin": {
+				"day": false
+			}
+		},
+		"Stefano Zucca": {
+			"Fentanyl": {
+				"morning": false,
+				"night": false
+			}
+		}
+	},
+	"quantity_control": {
+		"publisher_topic": "/MedicineBox/quantity",
+		"subscriber_timeShift_topic": "/MedicineBox/Control/timeShift",
+		"subscriber_button_topic": "/MedicineBox/Control/button2"
+	},
+	"time_shift": {
+		"publisher_topic": "/MedicineBox/Control/timeShift"
+	},
+	"pressing_control": {
+		"subscriber_topic": "/MedicineBox/Control/#",
+		"publisher_topic": "/MedicineBox/LCD"
+	},
+	"environment_control": {
+		"subscriber_topic": "/MedicineBox/humi_temp",
+		"publisher_topic": "None"
+	},
+	"Schedules": [{
+		"medicine": "Amoxicillin",
+		"user": "Hu Yang",
+		"num_times": 1,
+		"day": "13,16"
+	}, {
+		"medicine": "Fentanyl",
+		"morning": "6,8",
+		"user": "1231",
+		"num_times": 2,
+		"night": "20,22"
+	}],
+	"broker": {
+		"ip": "192.168.137.29",
+		"port": "None"
+	},
+	"devices": [{
+		"timestamp": 1539448401.416,
+		"endpoints": {
+			"ip": "None",
+			"mqtt_topic": "/MedicineBox/humi_temp"
+		},
+		"ID": "DHT11",
+		"resources": "humidity and temperature"
+	}, {
+		"timestamp": 1539448396.271,
+		"endpoints": {
+			"ip": "None",
+			"mqtt_topic": ["/MedicineBox/Control/button1", "/MedicineBox/Control/button2"]
+		},
+		"ID": "Button",
+		"resources": "switching user and take medicines"
+	}, {
+		"timestamp": 1539448407.268,
+		"endpoints": {
+			"ip": "None",
+			"mqtt_topic": "/MedicineBox/#"
+		},
+		"ID": "DI2C-LCD1602",
+		"resources": "LCD screen"
+	}, {
+		"timestamp": 1539448413.065,
+		"endpoints": {
+			"ip": "None",
+			"mqtt_topic": "/MedicineBox/Control/#"
+		},
+		"ID": "LED",
+		"resources": "turn on/off LED"
+	}],
+	"server": {
+		"ip": "192.168.1.26",
+		"port": "9090"
+	},
+	"place": {
+		"1": "NULL",
+		"3": "Amoxicillin",
+		"2": "NULL",
+		"4": "Fentanyl"
+	},
+	"User": [{
+		"ID": "UID002",
+		"surname": "Hu",
+		"email": "lsy5215212@outlook.it",
+		"name": "Yang"
+	}, {
+		"surname": "Zucca",
+		"ID": "UID003",
+		"name": "Stefano",
+		"email": "chenyh1994@gmail.com"
+	}],
+	"current_user": {
+		"user": "Stefano Zucca"
+	},
+	"medicine": [{
+		"name": "Amoxicillin",
+		"pills_per_time": 2,
+		"humidity_threshold": 78,
+		"place": 3,
+		"temperature_threshold": 30,
+		"initial_quantity": 35,
+		"current_quantity": 27
+	}, {
+		"name": "Fentanyl",
+		"pills_per_time": 1,
+		"humidity_threshold": 89,
+		"place": 4,
+		"temperature_threshold": 40,
+		"initial_quantity": 18,
+		"current_quantity": 18
+	}],
+	"last_update": {
+		"info": "Set topic-time shift",
+		"time": "2018-10-13 16:34"
+	},
+	"Thingspeak_adaptor": {
+		"subscriber_topic": "channels/581843/publish/RHB410ZHQR884COR",
+		"api_key": "RHB410ZHQR884COR",
+		"channelID": "581843"
+	}
+}
