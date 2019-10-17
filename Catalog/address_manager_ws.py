@@ -25,7 +25,8 @@ class index:
     def POST(self,*uri,**params):
         if uri[0] == 'set':
             file = open("addresses","w+")
-            address = json.dumps({'ip':params['ip'],'port':params['port']})
+            data = params['json_msg']
+            address = json.dumps({'ip':data['ip'],'port':data['port']})
             file.write(address)
             file.close()
             return "Update Successfully"

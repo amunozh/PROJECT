@@ -26,9 +26,11 @@ class index:
             elif uri[0] == 'show_users':
                 response = self.mycatalog.users()
             elif uri[0] == 'search_user':
-                response = self.mycatalog.search_user(params['ID'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.search_user(data['ID'])
             elif uri[0] == 'search_device':
-                response = self.mycatalog.search_device(params['ID'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.search_device(data['ID'])
             else:
                 response = 0
         else:
@@ -39,14 +41,16 @@ class index:
     def POST(self, *uri, **params):
         if uri:
             if uri[0] == 'add_device':#TODO:check it is not in the catalog.
-                #To add device url like IP:port/catalog.json/add_device?ID=ID_dev&end_point=[REST, MQTT]&resources=[ID_Reousrce]
-                response = self.mycatalog.add_device(params['ID'], params['end_point'], params['resources'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.add_device(data['ID'], data['end_point'], data['resources'])
                 # To add user url like IP:port/catalog.json/add_user?name=user_name&surname=user_surname&telegram=telegram_account
             elif uri[0] == 'add_user':
-                response = self.mycatalog.add_user(params['name'], params['surname'], params['telegram'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.add_user(data['name'], data['surname'], data['telegram'])
 
             elif uri[0] == 'add_service':
-                response = self.mycatalog.add_service(params['ID'], params['end_point'], params['resources'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.add_service(data['ID'], data['end_point'], data['resources'])
             else:
                 response = 0
         else:
@@ -57,10 +61,12 @@ class index:
     def PUT(self, *uri, **params):
         if uri:
             if uri[0] == 'refresh':
-                response = self.mycatalog.refresh(params['ID'])
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.refresh(data['ID'])
                 return("Updated") #TODO: test puts
             elif uri[0] == 'echo': #Use this resource to make test
-                return(params['test'])
+                data = json.loads(params['json_msg'])
+                return(data['test'])
             else:
                 response = 0
         else:
