@@ -21,8 +21,9 @@ class index:
             if uri[0] == 'broker': #TODO:SHOW_SERVICES
                 response = self.mycatalog.broker()
             elif uri[0] == 'show_devices':
-                print("hello")
                 response = self.mycatalog.devices()
+            elif uri[0] == 'show_services':
+                response = self.mycatalog.services()
             elif uri[0] == 'show_users':
                 response = self.mycatalog.users()
             elif uri[0] == 'search_user':
@@ -41,7 +42,10 @@ class index:
     def POST(self, *uri, **params):
         if uri:
             if uri[0] == 'add_device':#TODO:check it is not in the catalog.
-                data = json.loads(params['json_msg'])
+                received_data = params['json_msg']
+                data = received_data.replace("'",'"')
+                print(data)
+                data = json.loads(data)
                 response = self.mycatalog.add_device(data['ID'], data['end_point'], data['resources'])
                 # To add user url like IP:port/catalog.json/add_user?name=user_name&surname=user_surname&telegram=telegram_account
             elif uri[0] == 'add_user':
@@ -92,7 +96,8 @@ if __name__=="__main__" :
     IPAddr = socket.gethostbyname(hostname)
 
     print(IPAddr)
-    r = requests.post("http://" + IPAddr + ":8181" + "/address_manager/set", {'ip': IPAddr, 'port': 8282})
+    data = json.dumps({'ip': IPAddr, 'port': 8282})
+    r = requests.post("http://" + IPAddr + ":8181" + "/address_manager/set?json_msg=" + data)
     print(r)
 
     cherrypy.engine.start()

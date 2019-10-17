@@ -12,13 +12,13 @@ class MySubscriber:
 			self._paho_mqtt.on_connect = self.myOnConnect
 			self._paho_mqtt.on_message = self.myOnMessageReceived
 
-			self.topic = '/this/topic'
+			self.topic = '/RPS02/beacon'
 
 
 		def start (self):
 			#manage connection to broker
             #client.username_pw_set('rdehsovk', 'yWMIkwY8dkw1')
-			self._paho_mqtt.connect('192.168.1.18', 1883)
+			self._paho_mqtt.connect('192.168.1.6', 1883)
 			self._paho_mqtt.loop_start()
 			# subscribe for a topic
 			self._paho_mqtt.subscribe(self.topic, 2)

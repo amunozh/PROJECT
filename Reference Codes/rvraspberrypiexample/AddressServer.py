@@ -17,7 +17,7 @@ class AddressServer:
 
     def GET(self,*uri,**params):
         if uri[0] == 'get':
-            file = open("address_catalog.txt","r")
+            file = open("address_catalog.json","r")
             json_file = json.load(file)
             address = json.dumps({'ip':json_file['ip'],'port':json_file['port']})
             file.close()
@@ -25,7 +25,7 @@ class AddressServer:
 
     def POST(self,*uri,**params):
         if uri[0] == 'set':
-            file = open("address_catalog.txt","w+")
+            file = open("address_catalog.json","w+")
             address = json.dumps({'ip':params['ip'],'port':params['port']})
             file.write(address)
             file.close()

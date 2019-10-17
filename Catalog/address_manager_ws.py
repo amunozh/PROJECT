@@ -16,7 +16,7 @@ class index:
     def GET(self,*uri,**params):
         if uri:
             if uri[0] == 'get':
-                file = open(os.path.join(cwd, "addresses"))
+                file = open(os.path.join(cwd, "address_catalog.json"))
                 json_file = json.load(file)
                 address = json.dumps({'ip':json_file['ip'],'port':json_file['port']})
                 file.close()
@@ -24,11 +24,11 @@ class index:
 
     def POST(self,*uri,**params):
         if uri[0] == 'set':
-            file = open("addresses","w+")
             data = params['json_msg']
-            address = json.dumps({'ip':data['ip'],'port':data['port']})
-            file.write(address)
-            file.close()
+            print(data)
+            with open(os.path.join(cwd, "address_catalog.json"), 'w+') as f:
+                f.write(data)
+
             return "Update Successfully"
 
 
