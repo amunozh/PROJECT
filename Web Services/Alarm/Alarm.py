@@ -9,20 +9,21 @@ import time
 import paho.mqtt.client as Paho
 import json
 import requests
-from requests.exceptions import Timeout
+
 
 
 class Meter(object):
 
 
-    def __init__(self,name,sub_topic,pub_topic,broker):
+    def __init__(self,name,sub_topic,pub_topic,broker,IPs):
         self.client = Paho.Client(name)
         self.sub_topic = sub_topic
         self.pub_topic = pub_topic
         self.broker = broker
         self.client.on_message = self.on_message
-        self.timer = Timer()
         self.topic_names=[]
+        self.IPs = IPs
+        self.timer = Timer(IPs)
 
 
     def start(self):
@@ -36,9 +37,8 @@ class Meter(object):
 
     def publish(self,Topic,msg):
         if (Topic!="0"):
-            self.client.publish(self.pub_topic,msg,qos=0)
-        else:
             self.client.publish(Topic,msg,qos=0)
+
 
     def subscribe(self):
         self.client.subscribe(self.sub_topic)
@@ -46,12 +46,9 @@ class Meter(object):
 
     def on_message(self,client,userdata,message):
         content = json.loads(message.payload)
-#        print(content)
         print("We got a message!")
         print('Topic: %s Message: %s' % (message.topic,content))
-#        self.topic_names.append(message.topic)
-        Topic="0"
-        X=float(float(content["e"][0]["v"]))
+        X=float(content["e"][0]["v"])
         (Topic,Flag)=self.timer.check(message.topic,X)
         if Flag!="0":
             self.publish(Topic,Flag)
@@ -63,21 +60,18 @@ class Meter(object):
 
 class Timer(object):
 
-
-    def __init__(self):
+    def __init__(self, IPs):
         self.timer = False
+        self.IPs = IPs
 
     def check(self,Topic,HR):
         meg="0";
         if HR>=130:
-            meg=json.dumps({'Alarm':'High HR'})
-            
+            meg=json.dumps({'Alarm':'High HR','BPM':HR})
         elif HR<=70:
-            meg=json.dumps({'Alarm':'Low HR'})
-            
+            meg=json.dumps({'Alarm':'Low HR','BPM':HR})
         else:
             Topic="0"
-
         return (Topic,meg)
         
 
@@ -92,43 +86,52 @@ class Timer(object):
         else:
             return time.time()-self.timer
 
-
+class IPS(object):
+    def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
+        self.IPAdd=IPAdd
+        self.IPCat=IPCat
+        self.IPBroker=IPBroker
+        self.PAdd=PAdd
+        self.PCat=PCat
+        self.PBroker=PBroker
 
 
 if __name__ == '__main__':
     
     IPAddr="192.168.1.122"
-    
-    response = requests.get("http://"+IPAddr+":8181" + "/address_manager/get")
+    PortAddr="8181"
+    #Contact to Address Manager to get the Catalog IP and Port
+    response = requests.get("http://"+IPAddr+":"+PortAddr + "/address_manager/get")
     r=response.content.decode('utf-8')
     jr=json.loads(r)
     print(jr)
-    
     IPCat=jr['ip']
     PortCat=str(jr['port'])
-    aux=json.dumps({'ID':'AlarmBPM','end_point':['/Service/Alarms',None],'resources':['BPM_Alarm']})
 
+    # Contact to Catalog to Register as Service
+    aux=json.dumps({'ID':'AlarmBPM','end_point':['/Service/Alarms',None],'resources':['BPM_Alarm']})
     response = requests.post("http://" + IPCat + ":"+ PortCat + "/catalog/add_service?json_msg="+aux)
     r=response.content.decode('utf-8')
     print(r)
 
-    c = Meter('AlarmBPM','/+/BPM','Services/Alarm',"192.168.1.6")
-#
-#
-#
+    # Contact to Catalog to get the Broker IP and Port
+    response = requests.get("http://" + IPCat + ":"+PortCat + "/catalog/broker")
+    r = response.content.decode('utf-8')
+    jr = json.loads(r)
+    print(jr)
+    IPBroker = jr['ip']
+    PortBroker = jr['port']
+
+    #Save all IPs and Ports in a Variable
+    Dir = IPS(IPAddr, PortAddr, IPCat, PortCat, IPBroker, PortBroker)
+
+    #Create the MQTT Client to Receive Data and Reply in case of Anormal Values of BPM
+    #              Name , Sub Topic , Pub Topic , Broker IP , IPs
+    c = Meter('AlarmBPM','/+/BPM','Services/Alarm',Dir.IPBroker,Dir)
+
     c.start()
-    counter = 0
+
     c.subscribe()
-#    
-#    
-##    while counter < 15:
-##        if counter == 2:
-##            c.publish(json.dumps({'input':'on'}))
-##        elif counter == 4:
-##            c.publish(json.dumps({'input':'check'}))
-##        if counter == 13:
-##            c.publish(json.dumps({'input':'off'}))
-##        counter += 1
-##        time.sleep(1)
+
     time.sleep(100)
     c.stop()
