@@ -28,7 +28,7 @@ class telegram_bot:
         #dispatcher.add_handler(unknown_handler)
 
 if __name__ == '__main__':
-    TOKEN = "850291973:AAGzKfdmDjiQ2On-yfX4u20LrpHiuGyMqLA"
+    TOKEN =
     health_bot = telegram_bot(TOKEN=TOKEN)
     health_bot.run()
     health_bot.updater.idle()

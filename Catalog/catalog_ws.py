@@ -97,7 +97,7 @@ if __name__=="__main__" :
 
     print(IPAddr)
     data = json.dumps({'ip': IPAddr, 'port': 8282})
-    r = requests.post("http://" + IPAddr + ":8181" + "/address_manager/set?json_msg=" + data)
+    r = requests.post("http://" + IPAddr + ":8585" + "/address_manager/set?json_msg=" + data)
     print(r)
 
     cherrypy.engine.start()

@@ -42,6 +42,6 @@ if __name__ == '__main__':
             }
     cherrypy.tree.mount(index(),"/address_manager",conf)
     cherrypy.config.update({'server.socket_host':'0.0.0.0'})
-    cherrypy.config.update({'server.socket_port':8181})
+    cherrypy.config.update({'server.socket_port':8585})
     cherrypy.engine.start()
     cherrypy.engine.block()
