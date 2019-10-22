@@ -16,9 +16,9 @@ class index:
         self.mycatalog = catalog.catalog(os.path.join(cwd, "catalog.json"))
         self.mycatalog.update()
 
-    def GET(self, *uri, **params):#TODO:show services
+    def GET(self, *uri, **params):
         if uri:
-            if uri[0] == 'broker': #TODO:SHOW_SERVICES
+            if uri[0] == 'broker':
                 response = self.mycatalog.broker()
             elif uri[0] == 'show_devices':
                 response = self.mycatalog.devices()
@@ -33,9 +33,9 @@ class index:
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.search_device(data['ID'])
             else:
-                response = 0
+                response = False
         else:
-            response = 0
+            response = False
 
         return (json.dumps(response))
 
@@ -50,15 +50,15 @@ class index:
                 # To add user url like IP:port/catalog.json/add_user?name=user_name&surname=user_surname&telegram=telegram_account
             elif uri[0] == 'add_user':
                 data = json.loads(params['json_msg'])
-                response = self.mycatalog.add_user(data['name'], data['surname'], data['telegram'])
+                response = self.mycatalog.add_user(data['name'], data['surname'], data['telegram_ID'])
 
             elif uri[0] == 'add_service':
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.add_service(data['ID'], data['end_point'], data['resources'])
             else:
-                response = 0
+                response = False
         else:
-            response = 0
+            response = False
 
         return(json.dumps(response))
 
@@ -72,9 +72,9 @@ class index:
                 data = json.loads(params['json_msg'])
                 return(data['test'])
             else:
-                response = 0
+                response = False
         else:
-            response = 0
+            response = False
 
         return (str(response))
 

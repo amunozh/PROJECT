@@ -62,7 +62,7 @@ class telegram_bot:
 
 
 
-TOKEN =
+TOKEN = "850291973:AAGzKfdmDjiQ2On-yfX4u20LrpHiuGyMqLA"
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
 

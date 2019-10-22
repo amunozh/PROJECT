@@ -9,6 +9,14 @@ import time
 import cherrypy
 import threading
 import base64
+
+
+
+'''
+Exception codes:
+- 404 : Don't find the requested resource
+- 204 : The requested resource is empty
+'''
 class catalog:
     def __init__(self, filename):
         self.filename = filename
@@ -32,9 +40,9 @@ class catalog:
                 if dev['ID'] == ID: #when find it return it
                     return dev
 
-            return({"message":"device %d not found"}%(ID)) #if dont find it show error
+            return(404)
         else:
-            return({"message":"There are not devices"})
+            return(204)
 
     def search_service(self, ID):
         services = self.catalog['services']  # Select the devices JSON list
@@ -44,9 +52,9 @@ class catalog:
                 if serv['ID'] == ID:  # when find it return it
                     return serv
 
-            return ({"message": "device %d not found"} % (ID))  # if dont find it show error
+            return (404)  # if dont find it show error
         else:
-            return ({"message": "There are not devices"})
+            return (204)
 
     def search_user(self, ID):
         users = self.catalog['users']  # Select the devices JSON list
@@ -56,9 +64,21 @@ class catalog:
                 if user['ID'] == ID:
                     return user
 
-            return ({"message": "user %d not found"} % (ID))  # if dont find it show error
+            return (404)  # if dont find it show error
         else:
-            return ({"message": "There are not users"})
+            return (204)
+
+    def search_patient(self, ID):
+        patients = self.catalog['patients']  # Select the devices JSON list
+
+        if patients:
+            for patient in patients:  # Search the device
+                if patient['ID'] == ID:
+                    return patient
+
+            return (404)  # if dont find it show error
+        else:
+            return (204)
 
     def add_device(self, ID, end_point, resources):
 
@@ -66,7 +86,7 @@ class catalog:
 
         for dev in devices:
             if dev['ID'] == ID:
-                return({"message": "It already exists"})
+                return(False)
 
         new_dev = {
             'ID': ID,
@@ -89,6 +109,10 @@ class catalog:
 
         services = self.catalog['services']
 
+        for serv in services:
+            if serv['ID'] == ID:
+                return(False)
+
         new_serv = {
             'ID': ID,
             'end_point': end_point,
@@ -106,14 +130,19 @@ class catalog:
         file.close()
         return new_serv
 
-    def add_user(self, name, surname, ID_telegram):
+    def add_user(self, name, surname , ID_telegram):
         users = self.catalog['users']
         ID = 0
+
+        for user in users:
+            if user['ID'] == ID:
+                return(False)
 
         new_user = {
             'ID': ID_telegram,
             'name': name,
-            'surname': surname}
+            'surname': surname,
+            'patients': []}
 
         self.catalog['users'].append(new_user)
 
@@ -125,6 +154,9 @@ class catalog:
         file.truncate()
         file.close()
         return new_user
+
+
+    #TODO:add patient and show patients
 
     def devices(self):
         return (self.catalog['devices'])
