@@ -121,11 +121,11 @@ class catalog:
 
     def add_user(self, name, surname , ID_telegram):
         users = self.catalog['users']
-        ID = 0 #todo:chec this ID
 
-        for user in users:
-            if user['ID'] == ID:
-                return(False)
+        if users:
+            for user in users:
+                if user['ID'] == ID_telegram:
+                    return(False)
 
         new_user = {
             'ID': ID_telegram,
@@ -146,13 +146,13 @@ class catalog:
 
 
     def add_patient(self, ID, name, surname , health_device, location_device, room_ID):
-        users = self.catalog['users']
+        patients = self.catalog['patients']
 
-        for user in users:
-            if user['ID'] == ID:
+        for patient in patients:
+            if patient['ID'] == ID:
                 return(False)
 
-        new_user = {
+        new_patient = {
             'ID': ID,
             'name': name,
             'surname': surname,
@@ -161,7 +161,7 @@ class catalog:
             'location_device': location_device,
             'room_ID': room_ID}
 
-        self.catalog['users'].append(new_user)
+        self.catalog['patients'].append(new_patient)
 
         #update the file
         file = open(self.filename, 'r+')
@@ -170,9 +170,22 @@ class catalog:
         file.write(json.dumps(self.catalog))
         file.truncate()
         file.close()
-        return new_user
+        return new_patient
 
+    def caretaker(self, patient_ID, caretaker_ID):
+        patients = self.catalog['patients']  # Select the devices JSON list
 
+        if patients:
+            for patient in patients:  # Search the device
+                if patient['ID'] == patient_ID:
+                    patient['caretaker'] = caretaker_ID
+                    return (patient)
+
+            return (404)  # if dont find it show error
+        else:
+            return (204)
+
+        #update file
     def devices(self):
         return (self.catalog['devices'])
 

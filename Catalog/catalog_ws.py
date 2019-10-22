@@ -58,9 +58,9 @@ class index:
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.add_service(data['ID'], data['end_point'], data['resources'])
 
-            elif uri[0] == 'add_patients':
+            elif uri[0] == 'add_patient':
                 data = json.loads(params['json_msg'])
-                response = self.mycatalog.add_patient(data['ID'], data['name'], data['surname'], data['health_device'], data['location_device', data['room_ID']])
+                response = self.mycatalog.add_patient(data['ID'], data['name'], data['surname'], data['health_device'], data['location_device'], data['room_ID'])
             else:
                 response = False
         else:
@@ -74,6 +74,9 @@ class index:
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.refresh(data['ID'])
                 return("Updated") #TODO: test puts
+            elif uri[0] == 'caretaker':
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.caretaker(data['patient_ID'],data['caretaker'])
             elif uri[0] == 'echo': #Use this resource to make test
                 data = json.loads(params['json_msg'])
                 return(data['test'])

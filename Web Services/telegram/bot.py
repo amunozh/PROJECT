@@ -7,7 +7,7 @@ from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 import logging
 
 #Variables for bot
-OPTIONS, CHOOSE_PATIENT, REGISTER, PATIENT_ADDED, IDLE = range(5)
+OPTIONS, CHOOSE_PATIENT, REGISTER, ADD_PATIENT, IDLE = range(5)
 
 
 class catalog_connection:
@@ -32,9 +32,7 @@ class catalog_connection:
     def get_user(self, user_ID):
         user_data = json.dumps({'ID':user_ID})
         response = requests.get("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/search_user?json_msg="+user_data)
-        print(response.text)
         if response.text == '204' : #Empty user list
-            print(False)
             return(False)
         elif response.text == '404': #User not found
             return(False)
@@ -45,12 +43,35 @@ class catalog_connection:
     def add_user(self, name, surname , telegram_ID):
         user_data = json.dumps({'name':name, 'surname':surname, 'telegram_ID': telegram_ID})
         response = requests.post("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/add_user?json_msg=" + user_data)
-        print(response)
-        print(response.text)
-        if response == '200':
+        if response.status_code == 200:
             return(True)
         else:
             return(False)
+
+    def get_patients(self):
+        response = requests.get("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/show_patients")
+        if response.status_code == 200:
+            list_patients = json.loads(response.text)
+            available_patients = []
+            if list_patients:
+                for patient in list_patients:
+                    if patient['caretaker'] is None:
+                        available_patients.append(str(patient['ID']) + ':' + patient['name']+' '+patient['surname'])
+            return (available_patients)
+        else:
+            return(False)
+
+    def put_caretaker(self, patient_ID, caretaker_ID):
+        data = {'patient_ID':patient_ID,'caretaker': caretaker_ID}
+        data_json = json.dumps(data)
+        response = requests.put("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/caretaker?json_msg=" + data_json)
+        print(response.text)
+        if response.text == '404':
+            return(False)
+        elif response.text == '204':
+            return (False)
+        else:
+            return (True)
 
 
 
@@ -67,7 +88,6 @@ class telegram_bot:
 
 
     def start(self, update, context):
-        #TODO: Make the conversation with the user using ConversationHandler
         user = update.message.from_user
         is_user = self.catalog.get_user(user['id'])
         if is_user:
@@ -90,8 +110,27 @@ class telegram_bot:
             return(REGISTER)
 
     def options(self, update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text='The chosen option was {}'.format(update.message.text))
+        option = update.message.text
+        context.user_data['choice'] = option
+
+        if option.lower() == 'add patient':
+            available_patients = self.catalog.get_patients()
+
+            if available_patients:
+                reply_keyboard = [available_patients]
+
+                update.message.reply_text(
+                    text="Please select the patients that you are taking care of",
+                    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+                return (ADD_PATIENT)
+            else:
+                context.bot.send_message(chat_id=update.effective_chat.id,
+                                         text="Not available patients")
+
+        elif option.lower() == 'alerts':
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text='Show Alerts')
 
         return (ConversationHandler.END)
 
@@ -99,22 +138,52 @@ class telegram_bot:
     def register(self, update, context):
         user = update.message.from_user
         registry_success = self.catalog.add_user(user['first_name'],user['last_name'],user['id'])
-        if registry_success:
-            reply_keyboard = [['Add patient', 'Alerts']]
+        option = update.message.text
 
-            update.message.reply_text(
-                text="Excellent {} {}! You are now a caretaker,"
-                     "What do you want to do?".format(user['first_name'], user['last_name']),
-                reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        if option.lower() == 'yes':
+            if registry_success:
+                reply_keyboard = [['Add patient', 'Alerts']]
 
-            return(OPTIONS)
+                update.message.reply_text(
+                    text="Excellent {} {}! You are now a caretaker,"
+                         "What do you want to do?".format(user['first_name'], user['last_name']),
+                    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+                return(OPTIONS)
+
+            else:
+                context.bot.send_message(chat_id=update.effective_chat.id,
+                                         text='There was an error while registering please type /start '
+                                              'to try again')
+                return (ConversationHandler.END)
 
         else:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     text='There was an error while registering please type /start '
-                                          'to try again')
+                                     text="No problem! Whenever you want to become caretaker type /start")
+            return (ConversationHandler.END)
+
+    def add_patient(self,update,context):
+        option = update.message.text
+        user = update.message.from_user
+        patient_ID = int(option.split(':')[0])
+        response = self.catalog.put_caretaker(patient_ID, user['id'])
+
+        if response:
+            reply_keyboard = [['Add patient', 'Alerts']]
+
+            update.message.reply_text(
+                text="Excelent! The alerts regarding to the patient {} will be sent to you."
+                     "Now, what do you want to do?".format(user['first_name']),
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+            return (OPTIONS)
+
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text="Please try again typing /start")
+
 
         return (ConversationHandler.END)
+
 
     def cancel(self, update, context):
         user = update.message.from_user
@@ -133,8 +202,9 @@ class telegram_bot:
             entry_points=[CommandHandler('start', self.start)],
 
             states={
-                OPTIONS: [MessageHandler(Filters.regex('^(New patient|Alerts)$'), self.options)],
+                OPTIONS: [MessageHandler(Filters.regex('^(Add patient|Alerts)$'), self.options)],
                 REGISTER: [MessageHandler(Filters.regex('^(Yes|No)$'), self.register)],
+                ADD_PATIENT: [MessageHandler(Filters.text, self.add_patient)],
             },
 
             fallbacks=[CommandHandler('cancel', self.cancel)]
