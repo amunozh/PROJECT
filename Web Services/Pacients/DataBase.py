@@ -7,77 +7,93 @@ cwd = os.getcwd()
 
 class Llamado(object):
     def __init__(self):
-        pass
+        self.rxmsg="No Message"
     def sub(self,topic,broker):
-        client = mqtt.Client()
+        client = mqtt.Client("Prueba")
         client.on_message = self.on_message
-        client.connect(broker)  # connect to broker
+        client.connect(broker,port=1883)  # connect to broker
         client.loop_start()
         client.subscribe(topic)
-        msg=client.on_message.message.payload.decode("utf-8")
-        time.sleep(30)
-        print(msg)
-        if msg == None:
-            client.loop_stop()
-            msg='0'
+        time.sleep(10)
+        #print(self.rxmsg)
+        if self.rxmsg == '0':
+            client.disconnect()
+            msg ='No MQTT'
             return (str(msg))
         else:
-            client.loop_stop()
-            return(str(msg))
+            client.disconnect()
+            msg=str(self.rxmsg)
+            self.rxmsg='0'
+            return msg
 
     def on_message(self, client, userdata, message):
         print("message received " ,str(message.payload.decode("utf-8")))
-        print("message topic=",message.topic)
-        print("message qos=",message.qos)
-        print("message retain flag=",message.retain)
+        self.rxmsg=str(message.payload.decode("utf-8"))
+        client.disconect()
+        return
 
 class Patients(object):
-    def __init__(self,IPs):
+    def __init__(self, IPs):
+        self.IPs = IPs
         res = requests.get("http://" + self.IPs.IPCat + ":" + self.IPs.PCat + "/catalog/show_patients")
         re = res.content.decode('utf-8')
         jre = json.loads(re)
         print(jre)
         self.Pacientlist=jre
-        res = requests.get("http://" + self.IPs.IPCat + ":" + 8383 + "/database/all_patients")
+        res = requests.get("http://" + '192.168.1.204' + ":" + '8383' + "/database/all_patients")
         re = res.content.decode('utf-8')
         jre = json.loads(re)
         print(jre)
         self.Datalist=jre
-        self.IPs=IPs
+
 
     def read_list(self):
         for pac in self.Pacientlist:
             HDev = pac['health_device']
+            print(HDev)
             js = json.dumps({'ID': HDev})
             response = requests.get("http://" + self.IPs.IPCat + ":" + self.IPs.PCat + "/catalog/search_device?json_msg=" + js)
             r = response.content.decode('utf-8')
             jr = json.loads(r)
-            HR=Llamado.sub(jr['end_point'][0],self.IPs.IPBroker)
-            print(HR)
-            LocDev=pac['Location Device']
+            top=str(jr['end_point'][0])
+            H=Llamado()
+            HR=H.sub(top, self.IPs.IPBroker)
+            print("HR Leido")
+
+            LocDev=pac['location_device']
             js=json.dumps({'ID': LocDev})
             response = requests.get("http://" + self.IPs.IPCat + ":" + self.IPs.PCat + "/catalog/search_device?json_msg=" + js)
             r = response.content.decode('utf-8')
             jr = json.loads(r)
-            Loc = Llamado.sub(jr['end_point'][0], self.IPs.IPBroker)
-            print(Loc)
-            # Update=self.update_measurements(pac['ID'],HR,Loc)
+            print("Location")
+            print(jr)
+            top=str(jr['end_point'][0])
+            Loc = H.sub(top, self.IPs.IPBroker)
+            U=json.loads(Loc)
+            L=U['e'][0]['v']
+            print(L)
+
+            Update=self.update_measurements(pac['ID'],HR,L)
+            print("Actualizacion")
+            print(Update)
 
     def update_measurements(self, ID, HR, Loc):
-
-        Pcts = self.Datalist['Pacients']
-
-        if Pcts[ID] in Pcts:
-                j = {"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}
-                if len(Pcts[ID]["data"])<=10:
-                    Pcts[ID]["data"].append(j)
-                else:
-                    Pcts[ID]["data"].pop([-1])
-                    Pcts[ID]["data"].append(j)
-        else:
-            j={"ID":ID,"data":[{"Heart Rate":HR,"Location":Loc,"timestamp":time.time()}]}
+        j='0'
+        Pcts = self.Datalist
+        for pat in Pcts:
+            if pat['ID']==ID:
+                    j = {"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}
+                    if len(Pcts[ID]["data"])<=10:
+                        Pcts[ID]["data"].append(j)
+                    else:
+                        Pcts[ID]["data"].pop([-1])
+                        Pcts[ID]["data"].append(j)
+                    return "last update" + str(j)
+        if j=='0':
+            j = {"ID": ID, "data": [{"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}]}
             Pcts.append(j)
-        return "last update"+ j
+
+        return "last update"+ str(j)
 
 
 class IPS(object):
@@ -91,7 +107,7 @@ class IPS(object):
 
 if __name__ == '__main__':
     IPAddr="192.168.1.122"
-    PortAddr="8181"
+    PortAddr="8585"
     #Contact to Address Manager to get the Catalog IP and Port
     response = requests.get("http://"+IPAddr+":"+PortAddr + "/address_manager/get")
     r=response.content.decode('utf-8')
@@ -113,5 +129,10 @@ if __name__ == '__main__':
 
     #
     c = Patients(Dir)
-    while (True):
-        c.read_list()
+    #while (True):
+    c.read_list()
+    print("Post")
+    js = json.dumps(c.Datalist)
+    response = requests.post("http://" + "192.168.1.204" + ":" + "8383" + "/database/update_DB?json_msg=" + js)
+    r = response.content.decode('utf-8')
+    print(r)

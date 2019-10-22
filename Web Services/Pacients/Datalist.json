@@ -1,1 +1,1 @@
-{"pacients"=[]}
+{"patients":[{"ID": 0, "data": [{"Heart Rate": "40", "Location": false, "timestamp": 1571761354.176853}, {"Heart Rate": "40", "Location": false, "timestamp": 1571761540.7987413}, {"Heart Rate": "40", "Location": false, "timestamp": 1571761668.1178074}]}]}
