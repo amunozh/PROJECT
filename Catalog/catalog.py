@@ -68,17 +68,6 @@ class catalog:
         else:
             return (204)
 
-    def search_patient(self, ID):
-        patients = self.catalog['patients']  # Select the devices JSON list
-
-        if patients:
-            for patient in patients:  # Search the device
-                if patient['ID'] == ID:
-                    return patient
-
-            return (404)  # if dont find it show error
-        else:
-            return (204)
 
     def add_device(self, ID, end_point, resources):
 
@@ -132,7 +121,7 @@ class catalog:
 
     def add_user(self, name, surname , ID_telegram):
         users = self.catalog['users']
-        ID = 0
+        ID = 0 #todo:chec this ID
 
         for user in users:
             if user['ID'] == ID:
@@ -156,7 +145,33 @@ class catalog:
         return new_user
 
 
-    #TODO:add patient and show patients
+    def add_patient(self, ID, name, surname , health_device, location_device, room_ID):
+        users = self.catalog['users']
+
+        for user in users:
+            if user['ID'] == ID:
+                return(False)
+
+        new_user = {
+            'ID': ID,
+            'name': name,
+            'surname': surname,
+            'caretaker': None,
+            'health_device': health_device,
+            'location_device': location_device,
+            'room_ID': room_ID}
+
+        self.catalog['users'].append(new_user)
+
+        #update the file
+        file = open(self.filename, 'r+')
+        file.seek(0)
+        print(self.catalog)
+        file.write(json.dumps(self.catalog))
+        file.truncate()
+        file.close()
+        return new_user
+
 
     def devices(self):
         return (self.catalog['devices'])
@@ -166,6 +181,9 @@ class catalog:
 
     def services(self):
         return (self.catalog['services'])
+
+    def patients(self):
+        return (self.catalog['patients'])
 
     def refresh(self, ID):
         devices = self.catalog['devices']

@@ -26,6 +26,8 @@ class index:
                 response = self.mycatalog.services()
             elif uri[0] == 'show_users':
                 response = self.mycatalog.users()
+            elif uri[0] == 'show_patients':
+                response = self.mycatalog.patients()
             elif uri[0] == 'search_user':
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.search_user(data['ID'])
@@ -55,6 +57,10 @@ class index:
             elif uri[0] == 'add_service':
                 data = json.loads(params['json_msg'])
                 response = self.mycatalog.add_service(data['ID'], data['end_point'], data['resources'])
+
+            elif uri[0] == 'add_patients':
+                data = json.loads(params['json_msg'])
+                response = self.mycatalog.add_patient(data['ID'], data['name'], data['surname'], data['health_device'], data['location_device', data['room_ID']])
             else:
                 response = False
         else:
