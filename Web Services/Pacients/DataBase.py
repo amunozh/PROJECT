@@ -57,7 +57,13 @@ class Patients(object):
             jr = json.loads(r)
             top=str(jr['end_point'][0])
             H=Llamado()
-            HR=H.sub(top, self.IPs.IPBroker)
+            AU=H.sub(top, self.IPs.IPBroker)
+            if AU != '0':
+                U=json.loads(AU)
+                HR=U['e'][0]['v']
+                print(L)
+            else:
+                L='0'
             print("HR Leido")
 
             LocDev=pac['location_device']
@@ -69,10 +75,13 @@ class Patients(object):
             print(jr)
             top=str(jr['end_point'][0])
             Loc = H.sub(top, self.IPs.IPBroker)
-            U=json.loads(Loc)
-            L=U['e'][0]['v']
-            print(L)
-
+            if Loc != '0':
+                U=json.loads(Loc)
+                L=U['e'][0]['v']
+                print(L)
+            else:
+                L='0'
+            print("Loc Leido")
             Update=self.update_measurements(pac['ID'],HR,L)
             print("Actualizacion")
             print(Update)
