@@ -174,16 +174,29 @@ class catalog:
 
     def caretaker(self, patient_ID, caretaker_ID):
         patients = self.catalog['patients']  # Select the devices JSON list
+        users = self.catalog['users']
 
         if patients:
             for patient in patients:  # Search the device
                 if patient['ID'] == patient_ID:
                     patient['caretaker'] = caretaker_ID
-                    return (patient)
 
-            return (404)  # if dont find it show error
+                    for user in users:
+                        if user['ID'] == caretaker_ID:
+                            user['patients'].append(patient_ID)
+
+                            # update the file
+                            file = open(self.filename, 'r+')
+                            file.seek(0)
+                            print(self.catalog)
+                            file.write(json.dumps(self.catalog))
+                            file.truncate()
+                            file.close()
+                            return True #What to return?
+
+            return (404)  # Patient not found
         else:
-            return (204)
+            return (204)  #Patients resource is empty
 
         #update file
     def devices(self):

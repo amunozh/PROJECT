@@ -13,7 +13,7 @@ class MyPublisher:
     def start (self):
         #manage connection to broker
         #self._paho_mqtt.username_pw_set('user1','user1')
-        self._paho_mqtt.connect('192.168.1.18', 1883)
+        self._paho_mqtt.connect('192.168.1.198', 1883)
         self._paho_mqtt.loop_start()
     def stop (self):
         self._paho_mqtt.loop_stop()
@@ -33,10 +33,10 @@ if __name__ == "__main__":
     test.start()
 
     a = 0
-    while (a < 30):
+    while (a < 10):
         message = json.dumps({'temp':a})
         print ("Publishing: '%s'" % (message))
-        test.myPublish ('/this/topic', message)
+        test.myPublish ('/Alerts/ARS01', message)
         a += 1
         time.sleep(1)
 

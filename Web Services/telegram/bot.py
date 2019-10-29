@@ -3,6 +3,8 @@ import requests
 import telegram
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
+import paho.mqtt.client as PahoMQTT
+from threading import Thread
 
 import logging
 
@@ -73,6 +75,72 @@ class catalog_connection:
         else:
             return (True)
 
+    def my_patients(self, caretaker_ID):
+        response = requests.get("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/show_patients")
+        if response.status_code == 200:
+            list_patients = json.loads(response.text)
+            my_patients = []
+            if list_patients:
+                for patient in list_patients:
+                    if patient['caretaker'] == caretaker_ID:
+                        my_patients.append(patient['name']+' '+patient['surname'])
+                return(my_patients)
+            else:
+                return(False)
+
+    def search_patient(self, device_ID):
+        response = requests.get("http://" + self.catalogIP + ":" + self.catalogPort + "/catalog/show_patients")
+        if response.status_code == 200:
+            list_patients = json.loads(response.text)
+            for patient in list_patients:
+                if patient['health_device'] == device_ID:
+                    if patient['caretaker'] != None:
+                        return({'patient':patient['name']+' '+patient['surname'], 'caretaker':patient['caretaker']})
+                    else:
+                        return(False)
+            return(False)
+        else:
+            return(False)
+
+class telegram_sub(Thread):
+    def __init__(self, telegram_bot, catalog):
+        Thread.__init__(self)
+        self.thebot = telegram_bot
+        self.thecatalog = catalog
+        # create an instance of paho.mqtt.client
+        self._paho_mqtt = PahoMQTT.Client('telegram_sub', False)
+        # register the callback
+        self._paho_mqtt.on_connect = self.myOnConnect
+        self._paho_mqtt.on_message = self.myOnMessageReceived
+
+        self.topic = '/Alerts/#'
+
+    def run (self):
+        #manage connection to broker
+        #client.username_pw_set('rdehsovk', 'yWMIkwY8dkw1')
+        print("The broker ip is: " +  self.thecatalog.brokerIP)
+        self._paho_mqtt.connect(self.thecatalog.brokerIP, self.thecatalog.brokerPort)
+        self._paho_mqtt.loop_start()
+        # subscribe for a topic
+        self._paho_mqtt.subscribe(self.topic, 2)
+
+    def stop (self):
+        self._paho_mqtt.unsubscribe(self.topic)
+        self._paho_mqtt.loop_stop()
+        self._paho_mqtt.disconnect()
+
+    def myOnConnect (self, paho_mqtt, userdata, flags, rc):
+        print ("Connected to message broker with result code: "+str(rc))
+
+    def myOnMessageReceived (self, paho_mqtt , userdata, msg):
+        # A new message is received
+
+        print ("Topic:'" + msg.topic+"', QoS: '"+str(msg.qos)+"' Message: '"+str(msg.payload) + "'")
+
+        alert_device = (msg.topic).split('/')[-1]
+        info = self.thecatalog.search_patient(alert_device)
+        self.thebot.send_message(chat_id=int(info['caretaker']), text='There is a problem with the patient {}'.format(info['patient']))
+
 
 
 class telegram_bot:
@@ -81,17 +149,28 @@ class telegram_bot:
         bot = telegram.Bot(token= TOKEN)
         self.bot_id = bot.get_me()['id']
         #Register on catalog
-        self.catalog = catalog_connection("192.168.1.122", "8585", self.bot_id)
+        self.catalog = catalog_connection("192.168.1.193", "8585", self.bot_id)
         #Start updates
         self.updater = Updater(token= self.token, use_context=True)
         self.dispatcher = self.updater.dispatcher
+        self.subscriber = telegram_sub(bot, self.catalog)
 
+
+
+    def helper_text_list(self, listing):
+        prefix = "* "
+        end_line =" \n"
+        text = ""
+        for element in listing:
+            new_line = prefix + element + end_line
+            text = text + new_line
+        return(text)
 
     def start(self, update, context):
         user = update.message.from_user
         is_user = self.catalog.get_user(user['id'])
         if is_user:
-            reply_keyboard = [['Add patient', 'Alerts']]
+            reply_keyboard = [['Add patient', 'Show my patients']]
 
             update.message.reply_text(
                 text="Hello {} {}, welcome back to the health care system. "
@@ -111,7 +190,7 @@ class telegram_bot:
 
     def options(self, update, context):
         option = update.message.text
-        context.user_data['choice'] = option
+
 
         if option.lower() == 'add patient':
             available_patients = self.catalog.get_patients()
@@ -125,24 +204,46 @@ class telegram_bot:
 
                 return (ADD_PATIENT)
             else:
-                context.bot.send_message(chat_id=update.effective_chat.id,
-                                         text="Not available patients")
+                reply_keyboard = [['Add patient', 'Show my patients']]
 
-        elif option.lower() == 'alerts':
-            context.bot.send_message(chat_id=update.effective_chat.id,
-                                     text='Show Alerts')
+                update.message.reply_text(
+                    text="Not available patients "
+                         "What do you want to do?",
+                    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
-        return (ConversationHandler.END)
+                return (OPTIONS)
+
+        elif option.lower() == 'show my patients':
+            user = update.message.from_user
+            patients = self.catalog.my_patients(user['id'])
+
+            if patients:
+                reply_keyboard = [['Add patient', 'Show my patients']]
+                text = self.helper_text_list(patients)
+                update.message.reply_text(
+                    text=text + "Now what do you want to do?",
+                    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+                    reply_markdown = True)
+
+            else:
+                reply_keyboard = [['Add patient', 'Show my patients']]
+                update.message.reply_text(
+                    text="You are not taking care of any patient yet. What do you want to do?",
+                    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+        return (OPTIONS)
 
 
     def register(self, update, context):
         user = update.message.from_user
-        registry_success = self.catalog.add_user(user['first_name'],user['last_name'],user['id'])
+
         option = update.message.text
 
         if option.lower() == 'yes':
+            registry_success = self.catalog.add_user(user['first_name'], user['last_name'], user['id'])
             if registry_success:
-                reply_keyboard = [['Add patient', 'Alerts']]
+
+                reply_keyboard = [['Add patient', 'Show my patients']]
 
                 update.message.reply_text(
                     text="Excellent {} {}! You are now a caretaker,"
@@ -169,7 +270,7 @@ class telegram_bot:
         response = self.catalog.put_caretaker(patient_ID, user['id'])
 
         if response:
-            reply_keyboard = [['Add patient', 'Alerts']]
+            reply_keyboard = [['Add patient', 'Show my patients']]
 
             update.message.reply_text(
                 text="Excelent! The alerts regarding to the patient {} will be sent to you."
@@ -202,7 +303,7 @@ class telegram_bot:
             entry_points=[CommandHandler('start', self.start)],
 
             states={
-                OPTIONS: [MessageHandler(Filters.regex('^(Add patient|Alerts)$'), self.options)],
+                OPTIONS: [MessageHandler(Filters.regex('^(Add patient|Show my patients)$'), self.options)],
                 REGISTER: [MessageHandler(Filters.regex('^(Yes|No)$'), self.register)],
                 ADD_PATIENT: [MessageHandler(Filters.text, self.add_patient)],
             },
@@ -214,7 +315,7 @@ class telegram_bot:
 
         self.dispatcher.add_handler(conv_handler)
 
-
+        self.subscriber.start()
         self.updater.start_polling()
         #unknown_handler = MessageHandler(Filters.command, unknown)
         #dispatcher.add_handler(unknown_handler)
