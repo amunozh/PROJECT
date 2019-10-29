@@ -7,7 +7,7 @@ cwd = os.getcwd()
 
 class Llamado(object):
     def __init__(self):
-        self.rxmsg="No Message"
+        self.rxmsg="0"
     def sub(self,topic,broker):
         client = mqtt.Client("Prueba")
         client.on_message = self.on_message
@@ -18,7 +18,7 @@ class Llamado(object):
         #print(self.rxmsg)
         if self.rxmsg == '0':
             client.disconnect()
-            msg ='No MQTT'
+            msg ='0'
             return (str(msg))
         else:
             client.disconnect()
@@ -40,7 +40,7 @@ class Patients(object):
         jre = json.loads(re)
         print(jre)
         self.Pacientlist=jre
-        res = requests.get("http://" + '192.168.1.204' + ":" + '8383' + "/database/all_patients")
+        res = requests.get("http://" + '192.168.1.205' + ":" + '8383' + "/database/all_patients")
         re = res.content.decode('utf-8')
         jre = json.loads(re)
         print(jre)
@@ -48,22 +48,29 @@ class Patients(object):
 
 
     def read_list(self):
+        res = requests.get("http://" + self.IPs.IPCat + ":" + self.IPs.PCat + "/catalog/show_patients")
+        re = res.content.decode('utf-8')
+        jre = json.loads(re)
+        #print(jre)
+        self.Pacientlist=jre
         for pac in self.Pacientlist:
+            print(pac)
             HDev = pac['health_device']
             print(HDev)
             js = json.dumps({'ID': HDev})
             response = requests.get("http://" + self.IPs.IPCat + ":" + self.IPs.PCat + "/catalog/search_device?json_msg=" + js)
             r = response.content.decode('utf-8')
             jr = json.loads(r)
+            print(jr)
             top=str(jr['end_point'][0])
             H=Llamado()
             AU=H.sub(top, self.IPs.IPBroker)
             if AU != '0':
                 U=json.loads(AU)
                 HR=U['e'][0]['v']
-                print(L)
+                print(HR)
             else:
-                L='0'
+                HR='0'
             print("HR Leido")
 
             LocDev=pac['location_device']
@@ -82,27 +89,39 @@ class Patients(object):
             else:
                 L='0'
             print("Loc Leido")
-            Update=self.update_measurements(pac['ID'],HR,L)
+            Update=self.update_measurements(pac,HR,L)
             print("Actualizacion")
             print(Update)
+        return
 
-    def update_measurements(self, ID, HR, Loc):
+    def update_measurements(self, pac, HR, Loc):
         j='0'
         Pcts = self.Datalist
-        for pat in Pcts:
-            if pat['ID']==ID:
+        con=0
+        if Pcts:
+            for pat in Pcts:
+                if pat['ID']==pac['ID']:
+                    ID=pac['ID']
                     j = {"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}
                     if len(Pcts[ID]["data"])<=10:
                         Pcts[ID]["data"].append(j)
                     else:
-                        Pcts[ID]["data"].pop([-1])
+                        del Pcts[ID]["data"][0]
                         Pcts[ID]["data"].append(j)
                     return "last update" + str(j)
-        if j=='0':
-            j = {"ID": ID, "data": [{"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}]}
+                else:
+                    con=con+1
+            if con==len(Pcts):
+                j = {"ID": pac['ID'], 'name': pac['name'], 'surname': pac['surname'],
+                     "data": [{"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}]}
+                Pcts.append(j)
+                return "last update" + str(j)
+        else:
+            j = {"ID": pac['ID'], 'name':pac['name'],'surname':pac['surname'],"data": [{"Heart Rate": HR, "Location": Loc, "timestamp": time.time()}]}
             Pcts.append(j)
+            return "last update:" + str(j)
 
-        return "last update"+ str(j)
+
 
 
 class IPS(object):
@@ -115,7 +134,7 @@ class IPS(object):
         self.PBroker=PBroker
 
 if __name__ == '__main__':
-    IPAddr="192.168.1.122"
+    IPAddr="192.168.1.123"
     PortAddr="8585"
     #Contact to Address Manager to get the Catalog IP and Port
     response = requests.get("http://"+IPAddr+":"+PortAddr + "/address_manager/get")
@@ -138,10 +157,12 @@ if __name__ == '__main__':
 
     #
     c = Patients(Dir)
-    #while (True):
-    c.read_list()
-    print("Post")
-    js = json.dumps(c.Datalist)
-    response = requests.post("http://" + "192.168.1.204" + ":" + "8383" + "/database/update_DB?json_msg=" + js)
-    r = response.content.decode('utf-8')
-    print(r)
+    while (True):
+
+        c.read_list()
+        print("Post")
+        js = json.dumps(c.Datalist)
+        print(js)
+        response = requests.post("http://" + "192.168.1.205" + ":" + "8383" + "/database/update_DB?json_msg=" + js)
+        r = response.content.decode('utf-8')
+        print(r)

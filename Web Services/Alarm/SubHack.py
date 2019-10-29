@@ -40,7 +40,7 @@ class Meter(object):
         print("We got a message!")
         print('Topic: %s Message: %s' % (message.topic, content))
         aux=str(content)
-        Flag=json.dumps({'bn':'ARS01','e':[{'n':'BPM','u':'BPM','t':'1234','v':aux}]})
+        Flag=json.dumps({'bn':'ARS01','e':[{'n':'BPM','u':'BPM','t':time.time(),'v':aux}]})
         print(Flag)
         Topic="/ARS01/BPM"
         if Flag!="0":
@@ -70,11 +70,11 @@ class Timer(object):
 
 
 if __name__ == '__main__':
-    c = Meter('HackBPM', '/BPM', '/ARS01/BPM', "192.168.1.6")
+    c = Meter('HackBPM', '/BPM', '/ARS01/BPM', "192.168.1.7")
 
     c.start()
     counter = 0
     c.subscribe()
-
-    time.sleep(1000)
-    c.stop()
+    while (True):
+        time.sleep(1000)
+    #c.stop()

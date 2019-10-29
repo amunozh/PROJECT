@@ -49,8 +49,11 @@ class Meter(object):
         print("We got a message!")
         print('Topic: %s Message: %s' % (message.topic,content))
         X=float(content["e"][0]["v"])
-        (Topic,Flag)=self.timer.check(message.topic,X)
+        a=message.topic
+        top=a[1:6]
+        (Top,Flag)=self.timer.check(top,X)
         if Flag!="0":
+            Topic=self.pub_topic+Top
             self.publish(Topic,Flag)
             print("Alarm: %s" % (Topic))
         return
@@ -66,10 +69,10 @@ class Timer(object):
 
     def check(self,Topic,HR):
         meg="0";
-        if HR>=130:
-            meg=json.dumps({'Alarm':'High HR','BPM':HR})
-        elif HR<=70:
-            meg=json.dumps({'Alarm':'Low HR','BPM':HR})
+        if HR>=150:
+            meg=json.dumps({'Topic':Topic,'Alarm':'High HR','BPM':HR})
+        elif HR<=50:
+            meg=json.dumps({'Topic':Topic,'Alarm':'Low HR','BPM':HR})
         else:
             Topic="0"
         return (Topic,meg)
@@ -98,8 +101,8 @@ class IPS(object):
 
 if __name__ == '__main__':
     
-    IPAddr="192.168.1.122"
-    PortAddr="8181"
+    IPAddr="192.168.1.123"
+    PortAddr="8585"
     #Contact to Address Manager to get the Catalog IP and Port
     response = requests.get("http://"+IPAddr+":"+PortAddr + "/address_manager/get")
     r=response.content.decode('utf-8')
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     PortCat=str(jr['port'])
 
     # Contact to Catalog to Register as Service
-    aux=json.dumps({'ID':'AlarmBPM','end_point':['/Service/Alarms',None],'resources':['BPM_Alarm']})
+    aux=json.dumps({'ID':'AlarmBPM01','end_point':['/Service/Alarms',None],'resources':['BPM_Alarm']})
     response = requests.post("http://" + IPCat + ":"+ PortCat + "/catalog/add_service?json_msg="+aux)
     r=response.content.decode('utf-8')
     print(r)
@@ -127,11 +130,11 @@ if __name__ == '__main__':
 
     #Create the MQTT Client to Receive Data and Reply in case of Anormal Values of BPM
     #              Name , Sub Topic , Pub Topic , Broker IP , IPs
-    c = Meter('AlarmBPM','/+/BPM','Services/Alarm',Dir.IPBroker,Dir)
+    c = Meter('AlarmBPM','/+/BPM','/Alerts/',Dir.IPBroker,Dir)
 
     c.start()
 
     c.subscribe()
-
-    time.sleep(100)
-    c.stop()
+    while (True):
+        time.sleep(100)
+    #c.stop()

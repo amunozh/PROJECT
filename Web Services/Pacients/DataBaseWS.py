@@ -20,15 +20,24 @@ class DBWS(object):
 
     def GET(self, *uri, **params):
         if uri:
+            self.filename = os.path.join(cwd, "Datalist.json")
+            file = open(self.filename, 'r')  # open the file for reading it
+            self.database = json.load(file)  # read the file and convert to json
+            file.close()
             if uri[0] == 'patient':
                for pac in self.database['patients']:
-                    if pac['ID'] == params['ID']:
-                        response = {'ID': params['ID'], 'data': pac['ID']['data'][0]}
-                        return json.dumps(response)
+                    if pac['ID'] == int(params['ID']):
+                        flag=1
                     else:
-                        response = {"message": "ID does not exists"}
+                        flag=0
+               if flag == 1:
+                   response = {'ID':int(params['ID']), 'data': pac['data']}
+                   return json.dumps(response)
+               else:
+                   response = {"message": "ID does not exists"}
             elif uri[0] == 'all_patients':
                 response = self.database['patients']
+
             else:
                 response = 0
         else:
@@ -44,10 +53,10 @@ class DBWS(object):
                 print(data)
                 self.database = json.loads(data)
                 file = open(os.path.join(cwd, "Datalist.json"), 'r+')
+                aux=json.load(file)
+                aux['patients']=self.database
                 file.seek(0)
-                file.write('{"patients":')
-                file.write(json.dumps(self.database))
-                file.write("}")
+                file.write(json.dumps(aux))
                 file.truncate()
                 file.close()
 
@@ -79,8 +88,9 @@ if __name__=="__main__" :
 
     DBWSPort = '8383'
     hostname = socket.gethostname()
-    #IPAddr = socket.gethostbyname(hostname)
-    IPAddr = '192.168.1.122'
+    IPDB = socket.gethostbyname(hostname)
+    print(IPDB)
+    IPAddr = '192.168.1.123'
     print(IPAddr)
     PortAddr='8585'
     # Contact to Address Manager to get the Catalog IP and Port
@@ -92,8 +102,8 @@ if __name__=="__main__" :
     PortCat = str(jr['port'])
 
     # Contact to Catalog to Register as Service
-    direc=str("http://" + IPAddr + ":" + DBWSPort + "/database/")
-    aux = json.dumps({'ID': 'DataBase', 'end_point': [None,direc], 'resources': ['DataBase']})
+    direc=str("http://" + IPDB + ":" + DBWSPort + "/database/")
+    aux = json.dumps({'ID': 'DB01', 'end_point': [None,direc], 'resources': ['DataBase']})
     response = requests.post("http://" + IPCat + ":" + PortCat + "/catalog/add_service?json_msg=" + aux)
     r = response.content.decode('utf-8')
     print(r)

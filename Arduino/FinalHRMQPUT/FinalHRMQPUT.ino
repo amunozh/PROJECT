@@ -8,7 +8,7 @@ HeartSpeed heartspeed(A1);           ///Arduino Port for HR Sensor
 // MAC
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 // Server IP 
-const char* server = "192.168.1.6";
+const char* server = "192.168.1.7";
 // Topic 
 const char* topicName = "/BPM";
 
@@ -16,7 +16,7 @@ int valor;
 
 //REST
 // Server IP 
-char servidor[] = "192.168.1.122";    // Address Manager Server IP
+char servidor[] = "192.168.1.123";    // Address Manager Server IP
 // Port
 int port=8282;
 IPAddress ip(192, 168, 0, 177);     //Arduino Default IP
