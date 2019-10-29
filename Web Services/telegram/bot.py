@@ -144,12 +144,12 @@ class telegram_sub(Thread):
 
 
 class telegram_bot:
-    def __init__(self,TOKEN):
+    def __init__(self,TOKEN, IP_man, Port_man ):
         self.token = TOKEN
         bot = telegram.Bot(token= TOKEN)
         self.bot_id = bot.get_me()['id']
         #Register on catalog
-        self.catalog = catalog_connection("192.168.1.193", "8585", self.bot_id)
+        self.catalog = catalog_connection(IP_man, Port_man, self.bot_id)
         #Start updates
         self.updater = Updater(token= self.token, use_context=True)
         self.dispatcher = self.updater.dispatcher
@@ -322,7 +322,7 @@ class telegram_bot:
 
 if __name__ == '__main__':
     TOKEN = "850291973:AAGzKfdmDjiQ2On-yfX4u20LrpHiuGyMqLA"
-    health_bot = telegram_bot(TOKEN=TOKEN)
+    health_bot = telegram_bot(TOKEN, "192.168.1.123", "8585")
     health_bot.run()
     health_bot.updater.idle()
 
