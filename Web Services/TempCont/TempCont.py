@@ -9,6 +9,7 @@ import time
 import paho.mqtt.client as Paho
 import json
 import requests
+from random import randint
 
 from requests.exceptions import Timeout
 
@@ -23,7 +24,7 @@ class Meter(object):
         self.client.on_message = self.on_message
         self.topic_names = []
         self.IPs=IPs
-        self.timer = Timer(IPs)
+        self.controller = controller(IPs)
 
     def start(self):
         self.client.connect(self.broker)
@@ -41,54 +42,21 @@ class Meter(object):
         self.client.subscribe(self.sub_topic)
 
     def on_message(self, client, userdata, message):
+
         content = json.loads(message.payload)
         print("We got a message!")
         print('Topic: %s Message: %s' % (message.topic, content))
         ID=content["bn"]
         X = float(content["e"][0]["v"])
-        (Url,Flag) = self.timer.check(self.IPs,ID,X)
-        if Url != "0":
-            response = requests.get(Url + Flag)
-            r = response.content.decode('utf-8')
-            print(r)
 
+        Url = self.controller.ledController(ID,X)
+        response = requests.get(Url)
+        r = response.content.decode('utf-8')
+        print(r)
+        
         return
 
 
-class Timer(object):
-
-    def __init__(self,IPs):
-        self.timer = False
-        self.IPs=IPs
-
-    def check(self,IPs, Y, HR):
-        meg = "0";
-        aux=int(HR)
-        print(HR)
-        if HR <= 18 or HR>=28:
-            Act=Y[0]+Y[1]+"A"+Y[3]+Y[4]
-            js=json.dumps({'ID':Act})
-            response = requests.get("http://" + self.IPs.IPCat + ":"+self.IPs.PCat + "/catalog/search_device?json_msg=" + js)
-            r = response.content.decode('utf-8')
-            jr = json.loads(r)
-            Url=jr["end_point"][1]
-            print(Url)
-            meg = "25"
-        else:
-            Url = "0"
-
-        return (Url, meg)
-
-    def stop(self):
-        time_c = time.time() - self.timer
-        self.timer = False
-        return time_c
-
-    def get_time(self):
-        if self.timer == False:
-            return False
-        else:
-            return time.time() - self.timer
 
 class IPS(object):
     def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
@@ -98,6 +66,45 @@ class IPS(object):
         self.PAdd=PAdd
         self.PCat=PCat
         self.PBroker=PBroker
+
+class controller(object):
+    
+    def __init__(self, IPs):
+        self.IPs=IPs
+
+    def ledController(self, Y, temperature):
+        
+        self.temp=int(temperature)
+        Act=Y[0]+Y[1]+"A"+Y[3]+Y[4]
+        js=json.dumps({'ID':Act})
+        response = requests.get("http://" + self.IPs.IPCat + ":"+self.IPs.PCat + "/catalog/search_device?json_msg=" + js)
+        r = response.content.decode('utf-8')
+        jr = json.loads(r)
+        Url=jr["end_point"][1]
+        print(Url)
+        if (self.temp < 0):
+            value = randint(80, 100)
+            url="/actuator/warm?intensity="+str(value)
+        elif (0 <= self.temp and self.temp < 10):
+            value = randint(50, 80)
+            url="/actuator/warm?intensity="+str(value)
+        elif (10 <= self.temp and self.temp < 18):
+            value = randint(30, 50)
+            url="/actuator/warm?intensity="+str(value)
+        elif (23 <= self.temp and self.temp < 28):
+            value = randint(30, 50)
+            url="/actuator/cold?intensity="+str(value)
+        elif (28 <= self.temp and self.temp < 35):
+            value = randint(50, 80)
+            url="/actuator/cold?intensity="+str(value)
+        elif (self.temp >= 35):
+            value = randint(80, 100)
+            url="/actuator/cold?intensity="+str(value)
+        else:
+            url="/actuator/cold?intensity=20"
+
+
+        return(Url+url)
 
 
 if __name__ == '__main__':
