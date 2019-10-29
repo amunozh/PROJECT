@@ -3,12 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="26b1424e-3628-418b-a287-02b7dcb2dd2c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Arduino/FinalHRMQPUT/FinalHRMQPUT.ino" beforeDir="false" afterPath="$PROJECT_DIR$/Arduino/FinalHRMQPUT/FinalHRMQPUT.ino" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Web Services/Alarm/Alarm.py" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Alarm/Alarm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Web Services/Alarm/PubHR.py" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Alarm/PubHR.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Web Services/Alarm/SubHack.py" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Alarm/SubHack.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Web Services/Pacients/DataBase.py" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Pacients/DataBase.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Web Services/Pacients/DataBaseWS.py" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Pacients/DataBaseWS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Web Services/Pacients/Datalist.json" beforeDir="false" afterPath="$PROJECT_DIR$/Web Services/Pacients/Datalist.json" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
