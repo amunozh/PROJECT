@@ -11,7 +11,7 @@ import json
 import requests
 
 
-
+#Class in charge of Handle the MQTT Messages
 class Meter(object):
 
 
@@ -57,10 +57,7 @@ class Meter(object):
             self.publish(Topic,Flag)
             print("Alarm: %s" % (Topic))
         return
-
-
-
-
+#Class in charge of Monitor the HR received on the message
 class Timer(object):
 
     def __init__(self, IPs):
@@ -76,19 +73,8 @@ class Timer(object):
         else:
             Topic="0"
         return (Topic,meg)
-        
 
-    def stop(self):
-        time_c = time.time()-self.timer
-        self.timer = False
-        return time_c
-
-    def get_time(self):
-        if self.timer == False:
-            return False
-        else:
-            return time.time()-self.timer
-
+#Class in charge of Store the IP Addresses
 class IPS(object):
     def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
         self.IPAdd=IPAdd

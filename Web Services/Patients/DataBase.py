@@ -5,6 +5,7 @@ import requests
 import os
 cwd = os.getcwd()
 
+#Class in charge of Handle the MQTT Messages
 class Llamado(object):
     def __init__(self):
         self.rxmsg="0"
@@ -32,6 +33,7 @@ class Llamado(object):
         client.disconect()
         return
 
+#Class in charge of Check and Update the Datalist
 class Patients(object):
     def __init__(self, IPs):
         self.IPs = IPs
@@ -121,9 +123,7 @@ class Patients(object):
             Pcts.append(j)
             return "last update:" + str(j)
 
-
-
-
+#Class in charge of Store the IP Addresses
 class IPS(object):
     def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
         self.IPAdd=IPAdd
@@ -158,7 +158,6 @@ if __name__ == '__main__':
     #
     c = Patients(Dir)
     while (True):
-
         c.read_list()
         print("Post")
         js = json.dumps(c.Datalist)

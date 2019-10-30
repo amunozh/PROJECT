@@ -8,6 +8,7 @@ Exposing DataBase Web Service
 '''
 cwd = os.getcwd()
 
+#Class in charge od Handle the REST Requests
 class DBWS(object):
     exposed = True
 
@@ -108,6 +109,7 @@ if __name__=="__main__" :
     r = response.content.decode('utf-8')
     print(r)
 
+    # Contact to Catalog to get the Broker IP and Port
     response = requests.get("http://" + IPCat + ":" + PortCat + "/catalog/broker")
     r = response.content.decode('utf-8')
     jr = json.loads(r)

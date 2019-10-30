@@ -11,9 +11,7 @@ import json
 import requests
 from random import randint
 
-from requests.exceptions import Timeout
-
-
+#Class in charge of Handle the MQTT Messages
 class Meter(object):
 
     def __init__(self, name, sub_topic, pub_topic, broker,IPs):
@@ -56,8 +54,7 @@ class Meter(object):
         
         return
 
-
-
+#Class in charge of Store the IP Addresses
 class IPS(object):
     def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
         self.IPAdd=IPAdd
@@ -67,6 +64,7 @@ class IPS(object):
         self.PCat=PCat
         self.PBroker=PBroker
 
+#Class in charge of Monitor the Temperature received on the message
 class controller(object):
     
     def __init__(self, IPs):
@@ -124,6 +122,7 @@ if __name__ == '__main__':
     r = response.content.decode('utf-8')
     print(r)
 
+    # Contact to Catalog to Get Broker Address
     response = requests.get("http://" + IPCat + ":"+PortCat + "/catalog/broker")
     r = response.content.decode('utf-8')
     jr = json.loads(r)
@@ -138,7 +137,7 @@ if __name__ == '__main__':
     #
     #
     c.start()
-    counter = 0
     c.subscribe()
-    time.sleep(100)
-    c.stop()
+    while (True):
+        time.sleep(100)
+        #c.stop()

@@ -1,14 +1,15 @@
+# -*- coding: utf-8 -*-
 """
-Created on Fri Jan 25 10:47:44 2019
+Created on Tue Sep 24 00:34:10 2019
 
-@author: Shuyang
+@author: Miguel
 """
 
 import time
 import paho.mqtt.client as Paho
 import json
 
-
+#Class in charge of Receive the Arduino Messagens and Send them with the Appropriate Data Format
 class Meter(object):
 
     def __init__(self, name, sub_topic, pub_topic, broker):
@@ -17,7 +18,6 @@ class Meter(object):
         self.pub_topic = pub_topic
         self.broker = broker
         self.client.on_message = self.on_message
-        self.timer = Timer()
 
     def start(self):
         self.client.connect(self.broker)
@@ -47,27 +47,6 @@ class Meter(object):
             self.publish(Topic, Flag)
             print("Publico")
         return
-
-
-class Timer(object):
-
-    def __init__(self):
-        self.timer = False
-
-    def start(self):
-        self.timer = time.time()
-
-    def stop(self):
-        time_c = time.time() - self.timer
-        self.timer = False
-        return time_c
-
-    def get_time(self):
-        if self.timer == False:
-            return False
-        else:
-            return time.time() - self.timer
-
 
 if __name__ == '__main__':
     c = Meter('HackBPM', '/BPM', '/ARS01/BPM', "192.168.1.7")

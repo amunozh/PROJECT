@@ -31,21 +31,14 @@ void mycb(uint8_t rawData, int value)
     Serial.print("HeartRate Value = "); Serial.println(value);
   }
   valor=value;
-//  RES();
   Con(valor);
-//  RE();
-
 }
 
 void setup() {
   Serial.begin(115200);
-    /*!
-   *  @brief Indstiller callback funktion.
-   */
+
   heartspeed.setCB(mycb);    
-  /*!
-   *  @brief Åben puls test.
-   */
+
   heartspeed.begin();
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
@@ -76,12 +69,12 @@ void Con(int HR){
   // Tiempo entre envios (en ms)
   delay(100);
 }
+
 void RE(){
   // if you get a connection, report back via serial:
   if (ethClient.connect(servidor, port)) {
     Serial.println("connected");
     // Make a HTTP request:
-//    json="{ID:ARS01,end_point:[/ARS01/BPM],resources:[BPM]}"
     ethClient.println("POST /catalog/add_device?json_msg={'ID':'ARS01','end_point':['/ARS01/BPM'],'resources':['BPM']} HTTP/1.1");
     ethClient.println("Host: 192.168.1.193");
     ethClient.println("Content-Length: 0");
@@ -92,19 +85,7 @@ void RE(){
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
   }
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-//  if (ethClient.available()) {
-//    char c = ethClient.read();
-//    Serial.println(c);
-  //}
 
-  // if the server's disconnected, stop the client:
-//  if (!ethClient.connected()) {
-//    Serial.println();
-//    Serial.println("disconnecting.");
-//    ethClient.stop();
-//}
 }
 
 void RES(){
@@ -122,37 +103,15 @@ void RES(){
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
   }
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-//  if (ethClient.available()) {
-//    char c = ethClient.read();
-//    Serial.println(c);
-  //}
-
-  // if the server's disconnected, stop the client:
-//  if (!ethClient.connected()) {
-//    Serial.println();
-//    Serial.println("disconnecting.");
-//    ethClient.stop();
-//}
 }
 
 void loop() { 
-  //Con(valor);
-  
-//    if (ethClient.available()) {
-//    char c = ethClient.read();
-//    Serial.println(c);
-//    RES();
-//  }
 
   // if the server's disconnected, stop the client:
   if (!ethClient.connected()) {
     Serial.println();
     Serial.println("disconnecting.");
     ethClient.stop();
-//    Con(valor);
-//    RES();
     
 }
 

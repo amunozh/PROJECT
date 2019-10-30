@@ -10,10 +10,11 @@ import paho.mqtt.client as paho
 import json
 from random import randint
 
+#MQTT Test Client
 def on_publish(client, userdata, mid):
     print("mid: "+str(mid))
  
-client = paho.Client("prueba2")
+client = paho.Client("Test2")
 client.on_publish = on_publish
 client.connect("192.168.1.7", 1883)
 client.loop_start()
