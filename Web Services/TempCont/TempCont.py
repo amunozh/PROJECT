@@ -1,17 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  8 11:41:38 2019
-
-@author: Miguel
-"""
-
 import time
 import paho.mqtt.client as Paho
 import json
 import requests
 from random import randint
 
-#Class in charge of Handle the MQTT Messages
+from requests.exceptions import Timeout
+
 class Meter(object):
 
     def __init__(self, name, sub_topic, pub_topic, broker,IPs):
@@ -42,21 +36,22 @@ class Meter(object):
     def on_message(self, client, userdata, message):
 
         content = json.loads(message.payload)
+        #print(IPs)
         print("We got a message!")
         print('Topic: %s Message: %s' % (message.topic, content))
         ID=content["bn"]
-        X = float(content["e"][0]["v"])
-
-        Url = self.controller.ledController(ID,X)
+        X = float(content["e"][1]["v"])
+        print(X)
+        Url = self.controller.ledController(ID, X)
+        print(Url)
         response = requests.get(Url)
         r = response.content.decode('utf-8')
         print(r)
         
         return
 
-#Class in charge of Store the IP Addresses
 class IPS(object):
-    def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker,):
+    def __init__(self, IPAdd,PAdd,IPCat,PCat,IPBroker,PBroker):
         self.IPAdd=IPAdd
         self.IPCat=IPCat
         self.IPBroker=IPBroker
@@ -64,7 +59,6 @@ class IPS(object):
         self.PCat=PCat
         self.PBroker=PBroker
 
-#Class in charge of Monitor the Temperature received on the message
 class controller(object):
     
     def __init__(self, IPs):
@@ -79,7 +73,7 @@ class controller(object):
         r = response.content.decode('utf-8')
         jr = json.loads(r)
         Url=jr["end_point"][1]
-        print(Url)
+        
         if (self.temp < 0):
             value = randint(80, 100)
             url="/actuator/warm?intensity="+str(value)
@@ -98,15 +92,15 @@ class controller(object):
         elif (self.temp >= 35):
             value = randint(80, 100)
             url="/actuator/cold?intensity="+str(value)
-        else:
-            url="/actuator/cold?intensity=20"
-
-
+        elif (18 <= self.temp and self.temp < 23):
+            value = randint(80, 100)
+            url="/actuator/warm?intensity=20"
+        
         return(Url+url)
 
 
 if __name__ == '__main__':
-    IPAddr = "192.168.1.122"
+    IPAddr = "192.168.1.123"
     PortAddr = "8585"
     # Contact to Address Manager to get the Catalog IP and Port
     response = requests.get("http://" + IPAddr + ":" + PortAddr + "/address_manager/get")
@@ -122,7 +116,6 @@ if __name__ == '__main__':
     r = response.content.decode('utf-8')
     print(r)
 
-    # Contact to Catalog to Get Broker Address
     response = requests.get("http://" + IPCat + ":"+PortCat + "/catalog/broker")
     r = response.content.decode('utf-8')
     jr = json.loads(r)
@@ -132,12 +125,12 @@ if __name__ == '__main__':
 
     Dir=IPS(IPAddr,PortAddr,IPCat,PortCat,IPBroker,PortBroker)
 
-    c = Meter('TempControl', '/+/humi_temp', 'Services/Temperature_Control', Dir.IPBroker,IPS)
+    c = Meter('TempControl', '/+/humi_temp', 'Services/Temperature_Control', Dir.IPBroker,Dir)
     #
     #
     #
     c.start()
+    counter = 0
     c.subscribe()
-    while (True):
-        time.sleep(100)
-        #c.stop()
+    time.sleep(100)
+    c.stop()

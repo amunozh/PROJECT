@@ -1,13 +1,13 @@
+from gpiozero import MotionSensor
 import paho.mqtt.client as paho
-import json
-import time
 import requests
 import Adafruit_DHT as ada
+import json
+import time
 
-#from datetime import datetime
+pir= MotionSensor(4)
 
-
-class DHT11_Clients :
+class pirClients:
 
     def __init__(self,ID,broker,pub_topic,sub_topic,port=None):
         self.Id = ID
@@ -19,14 +19,14 @@ class DHT11_Clients :
         self.client.on_message = self.on_message
         self.client.on_connect = self.on_connect
 
-    def start_loop(self):
+    def startLoop(self):
         if self.port == None:
             self.client.connect(self.broker)
         else:
             self.client.connect(self.broker,self.port)
         self.client.loop_start()
 
-    def stop_loop(self):
+    def stopLoop(self):
         self.client.disconnect()
         self.client.loop_stop()
 
@@ -40,25 +40,9 @@ class DHT11_Clients :
     def on_message(self,client,userdata,message):
         print str(message.topic),"\t",str(message.payload),"\n"
 
-    
-def read_file(file):
-    
-    lineDeg= [0]
-        
-    with open(file) as f:
-        for i in range(len(lineDeg)):
-            lineDeg[i]=f.readline()        
-    f.close()
-    str0= ''.join(lineDeg)
-        
-    return (str0)
-
-
 if __name__ == "__main__":
 
-    DHT11_PIN = 17     #BCM 17
-
-    address_data = requests.get("http://192.168.1.122:8181/address_manager/get")
+    address_data = requests.get("http://192.168.1.123:8585/address_manager/get")
     print(address_data)
     ip,port = json.loads(address_data.text)['ip'],str(json.loads(address_data.text)['port'])
     
@@ -68,65 +52,29 @@ if __name__ == "__main__":
     print(r.text)
     broker_ip,broker_port = json.loads(r.text)['ip'],str(json.loads(r.text)['port'])
     
-    
-    DHT11 = DHT11_Clients("DHT11",broker_ip,"/RPS01/humi_temp",None)
+    pir_client = pirClients("pir",broker_ip,"/RPS02/pir",None)
     
     #registe this device
-    payload = json.dumps({'ID':'RPS01','end_point':['/RPS01/humi_temp',None],'resources':'humidity&temperature'})
+    payload = json.dumps({'ID':'RPS02','end_point':['/RPS02/pir',None],'resources':'patient_presence'})
     url = "http://"+ip+":"+port+"/catalog/add_device?json_msg="+payload
     requests.post(url)
-    
-    DHT11.start_loop()
+   
+    pir_client.startLoop()
 
     try:
-        while True :
-            humidity,temp = ada.read_retry(ada.DHT11,DHT11_PIN)
-            url = "http://"+ip+":"+port+"/catalog/refresh?ID=RPS01"
-            DHT11.publish(json.dumps({'bn':"RPS01",'e':[{'n':'humidity','u':'%','t':time.time(),'v':humidity},{'n':'temperature','u':'cel','t':time.time(),'v':temp}]}))
-            time.sleep(1)
+        while True:
+            
+            print("false")
+            signal = False
+            url = "http://"+ip+":"+port+"/catalog/refresh?ID=RPS02"
+            pir_client.publish(json.dumps({'bn':"RPS02",'e':[{'n':'pir','u':None,'t':time.time(),'v':signal}]}))
+                
+            while (pir.wait_for_motion(2)):
+                signal = True
+                url = "http://"+ip+":"+port+"/catalog/refresh?ID=RPS02"
+                pir_client.publish(json.dumps({'bn':"RPS02",'e':[{'n':'pir','u':None,'t':time.time(),'v':signal}]}))
+                print("true")
 
     except KeyboardInterrupt:
         print "exiting"
-        DHT11.stop_loop()
-       
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        pir_client.stopLoop()
